@@ -10,6 +10,8 @@ from src.preprocessor import Preprocessor
 from src.model import ModelTrainer
 from sklearn.model_selection import train_test_split
 import logging
+import json
+from datetime import datetime
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -65,6 +67,40 @@ def main(config_path: str):
         model_path = os.path.join(config['model_dir'], f"{config['model_type']}_model.joblib")
         model_trainer.save_model(model_path)
         logger.info(f"Model saved to {model_path}")
+
+    # Persist metrics (CV + test) to metrics file
+    try:
+        metrics_record = {
+            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'model_type': config['model_type'],
+            'model_params': config.get('model_params', {}),
+            'cv_metrics': cv_metrics,
+            'test_metrics': test_metrics,
+            'data_query': config.get('data_query')
+        }
+
+        # ensure model_dir exists
+        os.makedirs(config.get('model_dir', 'models'), exist_ok=True)
+        metrics_path = os.path.join(config.get('model_dir', 'models'), 'metrics.json')
+
+        # append the new record to a JSON array in metrics file
+        if os.path.exists(metrics_path):
+            with open(metrics_path, 'r', encoding='utf-8') as mf:
+                try:
+                    metrics_list = json.load(mf)
+                except Exception:
+                    metrics_list = []
+        else:
+            metrics_list = []
+
+        metrics_list.append(metrics_record)
+
+        with open(metrics_path, 'w', encoding='utf-8') as mf:
+            json.dump(metrics_list, mf, indent=2)
+
+        logger.info(f"Metrics saved to {metrics_path}")
+    except Exception as e:
+        logger.error(f"Failed to save metrics: {e}")
 
 
 if __name__ == "__main__":
