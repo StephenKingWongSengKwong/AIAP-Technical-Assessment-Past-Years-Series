@@ -1,5 +1,7 @@
 # Hotel No-Show Prediction Project
 
+[![Latest commit](https://img.shields.io/badge/commit-8f9cedb-blue)](https://github.com/StephenKingWongSengKwong/AIAP-Technical-Assessment-Past-Years-Series/commit/8f9cedb)
+
 ## Requirements Specification Document (RSD)
 
 ### Project Objective
