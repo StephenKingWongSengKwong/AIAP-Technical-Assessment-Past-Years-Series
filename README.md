@@ -198,64 +198,85 @@ graph TD
 
 ## Usage and Execution Instructions
 
-### Running the Pipeline
-1. Ensure you're in the project root directory
-2. Make the run script executable (Unix/Linux):
-   ```bash
-   chmod +x run.sh
+Below are precise instructions for running the pipeline locally, configuring experiments, and where to find outputs.
+
+### 1) Prepare your environment (Windows PowerShell)
+1. Create & activate virtual environment (one-time):
+   ```powershell
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
    ```
-3. Execute the pipeline:
-   ```bash
-   ./run.sh
+2. Install dependencies (one-time):
+   ```powershell
+   pip install -r requirements.txt
    ```
 
-### Modifying Parameters
-The pipeline can be configured through:
+### 2) Configure the pipeline
+- Primary config file: `config/params.yaml`. Edit these keys as needed:
+  - `database_path`: path to your SQLite DB (e.g. `data/hotel_data.db`)
+  - `data_query`: SQL query to fetch the data (e.g. `SELECT * FROM bookings`)
+  - `target_column`: name of the label column (default `no_show`)
+  - `model_type`: `randomforest`, `xgboost`, or `lightgbm`
+  - `model_params`: dictionary of model hyperparameters
+  - `test_size`, `random_state`, `cv_folds`, `scoring`, `model_dir`
 
-1. **Configuration File** (`config/params.yaml`):
-   ```yaml
-   preprocessing:
-     scaling: standard  # or minmax, robust
-     handling_missing: mean  # or median, mode
-   
-   feature_engineering:
-     create_interactions: true
-     polynomial_degree: 2
-   
-   model:
-     type: randomforest  # or xgboost, lightgbm
-     parameters:
-       n_estimators: 100
-       max_depth: 10
-   ```
+- You can also override config values using environment variables. Examples (PowerShell):
+  ```powershell
+  $env:MODEL_TYPE = "xgboost"
+  $env:TEST_SIZE = "0.25"
+  ```
 
-2. **Environment Variables**:
-   ```bash
-   export MODEL_TYPE=randomforest
-   export N_ESTIMATORS=100
-   ```
+### 3) Run the pipeline
+- Via Python (recommended on Windows PowerShell):
+  ```powershell
+  python src/main.py --config config/params.yaml
+  ```
 
-3. **Command Line Arguments**:
-   ```bash
-   ./run.sh --model randomforest --n-estimators 100
-   ```
+- Via `run.sh` (Unix-like shells / Git Bash / WSL):
+  ```bash
+  chmod +x run.sh
+  ./run.sh
+  ```
 
-### Running EDA Notebook
-1. Activate the virtual environment:
-   ```
-   .\noshow_env\Scripts\activate  # On Windows
-   ```
-2. Launch Jupyter notebook:
-   ```
+### 4) Quick experiment patterns
+- Change the model quickly (env var):
+  ```powershell
+  $env:MODEL_TYPE = "lightgbm"
+  python src/main.py --config config/params.yaml
+  ```
+- Run with a different config file:
+  ```powershell
+  python src/main.py --config config/params_experiment.yaml
+  ```
+
+### 5) Running the EDA notebook
+1. Activate your venv (see above).
+2. Open Jupyter Notebook (PowerShell):
+   ```powershell
    jupyter notebook notebooks/eda.ipynb
    ```
 
-## Expected Outcomes
-- Comprehensive data analysis report
-- Trained machine learning models
-- Model performance comparisons
-- Recommendations for policy changes
-- Prediction system for future bookings
+If you use JupyterLab, you can open the notebook there as well.
+
+## Outputs and Artifacts
+- Trained models: saved in the path defined by `model_dir` in `config/params.yaml` (default `models/`) as `{model_type}_model.joblib`.
+- Metrics & logs: printed to console (logger). You can redirect output to a file to capture metrics, or extend `src/main.py` to save metrics to `models/metrics.json` or CSV.
+- Intermediate files (optional): you can extend the pipeline to save preprocessed datasets, feature importances, or model checkpoints.
+
+## Troubleshooting
+- Database errors: if `DataLoader` can't open the DB, ensure `config/params.yaml` → `database_path` points to an existing `.db` file and the `data_query` matches your schema. Use a SQLite browser to inspect tables.
+- Missing packages: if you see `ModuleNotFoundError` for `xgboost` or `lightgbm`, install them via pip (these are optional unless you select those models):
+   ```powershell
+   pip install xgboost lightgbm
+   ```
+- run.sh on Windows: either use Git Bash / WSL or call `python src/main.py` directly from PowerShell.
+- Column/Type mismatches: If preprocessing fails, print `df.dtypes` early in `src/main.py` or adjust `data_query` so columns have expected types. Update `config/params.yaml` `target_column` if needed.
+
+## Next Steps & Improvements
+- Persist metrics to `models/metrics/` as JSON/CSV for experiment tracking.
+- Add GridSearchCV/RandomizedSearchCV for hyperparameter tuning.
+- Add a simple unit test suite for `DataLoader` and `Preprocessor`.
+- Add CI to run linting and tests on each push.
 
 ## Virtual Environment
 The project uses a Python virtual environment (`noshow_env`) to manage dependencies and ensure reproducibility.
