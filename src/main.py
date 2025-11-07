@@ -41,9 +41,9 @@ def main(config_path: str):
     with data_loader as loader:
         data = loader.load_data(config['data_query'])
     
-    # Preprocess data
-    logger.info("Preprocessing data...")
-    X, y = preprocessor.preprocess(data)
+    # Preprocess data (fit preprocessors)
+    logger.info("Preprocessing data (fitting preprocessors)...")
+    X, y = preprocessor.fit(data)
     
     # Split data
     X_train, X_test, y_train, y_test = train_test_split(
@@ -101,6 +101,13 @@ def main(config_path: str):
         logger.info(f"Metrics saved to {metrics_path}")
     except Exception as e:
         logger.error(f"Failed to save metrics: {e}")
+    # Save preprocessor for inference
+    try:
+        preproc_path = os.path.join(config.get('model_dir', 'models'), 'preprocessor.joblib')
+        preprocessor.save(preproc_path)
+        logger.info(f"Preprocessor saved to {preproc_path}")
+    except Exception as e:
+        logger.error(f"Failed to save preprocessor: {e}")
 
 
 if __name__ == "__main__":
